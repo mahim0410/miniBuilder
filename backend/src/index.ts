@@ -1,65 +1,41 @@
-import 'dotenv/config'
-
-const key: string | undefined = process.env.OPEN_ROUTER_KEY
-
-import OpenAI from 'openai';
+import "dotenv/config"
 
 
-const client = new OpenAI({
-    baseURL: 'https://openrouter.ai/api/v1',
-    apiKey: process.env.OPEN_ROUTER_KEY,
+import { OpenRouter } from '@openrouter/agent';
+
+const openrouter = new OpenRouter({
+    apiKey: process.env.OPENROUTER_API_KEY,
 });
 
-// First API call with reasoning
-async function main() {
-    const apiResponse = await client.chat.completions.create({
-        model: 'arcee-ai/trinity-large-preview:free',
-        messages: [
-            {
-                role: 'user' as const,
-                content: "how are you",
-            },
-        ],
-        // reasoning { enabled: true }
-    });
-    // console.log(apiResponse)
+const result = openrouter.callModel({
+    model: 'minimax/minimax-m2.5:free',
+    input: 'What is the meaning of life',
+    //   tools: [searchTool], // Generator tool with eventSchema
+});
 
-
-
-
-    // Extract the assistant message with reasoning_details
-    type ORChatMessage = (typeof apiResponse)['choices'][number]['message']['content'] & {
-        reasoning_details?: unknown;
-    };
-    const response = apiResponse.choices[0]?.message.content as ORChatMessage;
-
-    console.log(`The user response is -`, response)
-
-
-    // Preserve the assistant message with reasoning_details
-    // const messages = [
-    //     {
-    //         role: 'user' as const,
-    //         content: "How many r's are in the word 'strawberry'?",
-    //     },
-    //     {
-    //         role: 'assistant' as const,
-    //         content: response.content,
-    //         reasoning_details: response.reasoning_details, // Pass back unmodified
-    //     },
-    //     {
-    //         role: 'user' as const,
-    //         content: "Are you sure? Think carefully.",
-    //     },
-    // ];
-
-    // // Second API call - model continues reasoning from where it left off
-    // const response2 = await client.chat.completions.create({
-    //     model: 'minimax/minimax-m2.5:free',
-    //     messages, // Includes preserved reasoning_details
-    // });
-
-
+for await (const event of result.getFullResponsesStream()) {
+    switch (event.type) {
+        case 'response.output_text.delta':
+            process.stdout.write(event.delta);
+            break;
+        case 'response.function_call_arguments.delta':
+            console.log('Tool argument delta:', event.delta);
+            break;
+        case 'response.completed':
+            console.log('Response complete');
+            break;
+        case 'tool.preliminary_result':
+            // Intermediate progress from generator tools
+            console.log('Progress:', event.result);
+            break;
+        case 'tool.result':
+            // Final result when tool execution completes
+            console.log('Tool completed:', event.toolCallId);
+            console.log('Result:', event.result);
+            // Access any preliminary results that were emitted
+            if (event.preliminaryResults) {
+                console.log('Preliminary results:', event.preliminaryResults);
+            }
+            break;
+    }
 }
-
-main()
