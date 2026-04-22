@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "dev": "tsc -b && node dist/index.js"
   },
@@ -10,7 +11,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@openrouter/ai-sdk-provider": "^2.8.0",
+    "@openrouter/sdk": "^0.12.19",
     "dotenv": "^17.4.2",
+    "openai": "^6.34.0",
     "typescript": "^6.0.3"
   },
   "devDependencies": {
