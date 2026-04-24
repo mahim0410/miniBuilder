@@ -5,7 +5,7 @@ const openrouter = new OpenRouter({
 });
 const result = openrouter.callModel({
     model: 'minimax/minimax-m2.5:free',
-    input: 'What is the meaning of life',
+    input: 'Give me the code for a todo app',
     //   tools: [searchTool], // Generator tool with eventSchema
 });
 for await (const event of result.getFullResponsesStream()) {
